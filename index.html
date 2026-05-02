@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>昇瑋鋁窗五金行</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50:  '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              300: '#86efac',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap');
+    body { font-family: 'Noto Sans TC', sans-serif; }
+    .cart-badge { animation: pop 0.2s ease; }
+    @keyframes pop { 0%,100%{transform:scale(1)} 50%{transform:scale(1.4)} }
+    .product-card:hover .product-img { transform: scale(1.08); }
+    .scrollbar-hide::-webkit-scrollbar { display: none; }
+    .scrollbar-hide { -ms-overflow-style:none; scrollbar-width:none; }
+  </style>
+</head>
+<body class="bg-gray-50">
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useCallback, useRef } = React;
+
+/* ───── DATA ───── */
+const CATEGORIES = [
+  { id:'all',    label:'全部商品',   icon:'🏪' },
+  { id:'seal',   label:'密封隔音條', icon:'🔇' },
+  { id:'stop',   label:'門檔門止',   icon:'🚪' },
+  { id:'lock',   label:'門窗安全鎖', icon:'🔒' },
+  { id:'box',    label:'信箱',       icon:'📬' },
+  { id:'key',    label:'鎖具鑰匙',   icon:'🗝️' },
+  { id:'pkg',    label:'包材用品',   icon:'📦' },
+  { id:'tool',   label:'工具文具',   icon:'✂️' },
+];
+
+const PRODUCTS = [
+  /* ── 密封隔音條 ── */
+  { id:1,  cat:'seal', name:'門底密封條 防風防蟲隔音條', price:44,  unit:'條', sold:'2萬+', badge:'熱銷', img:'🔇', desc:'防蟲隔音冷氣防漏，門底防塵擋風，附背膠易貼' },
+  { id:2,  cat:'seal', name:'蛙眼四代門縫密封條',        price:90,  unit:'條', sold:'4000+',badge:'升級', img:'🔇', desc:'升級蛙眼四代，靜音密封，防風防塵防蟲多功能' },
+  { id:3,  cat:'seal', name:'門窗密封條 泡棉氣密條',     price:17,  unit:'尺', sold:'3萬+', badge:'熱銷', img:'🔇', desc:'泡棉條門窗防撞防音，門縫窗縫通用，多種規格' },
+  { id:4,  cat:'seal', name:'加厚門底密封條 200cm',      price:44,  unit:'條', sold:'4000+',badge:null,   img:'🔇', desc:'加厚款，200cm長，門底氣密防蟲防塵白色款' },
+  { id:5,  cat:'seal', name:'多層加厚門縫隔音條',        price:79,  unit:'條', sold:'2000+',badge:null,   img:'🔇', desc:'多層結構，隔音防風防塵冷氣防漏，熱銷TOP款' },
+  { id:6,  cat:'seal', name:'毛刷條氣密條（無背膠）',   price:2,   unit:'尺', sold:'1萬+', badge:null,   img:'🔇', desc:'防寒防風門縫窗縫通用，軟毛刷設計，按尺計價' },
+  { id:7,  cat:'seal', name:'汽車專用隔音氣密條',        price:7,   unit:'尺', sold:'4000+',badge:null,   img:'🔇', desc:'車門防撞隔音密封，客製化剪裁，多種規格可選' },
+  { id:8,  cat:'seal', name:'車門防撞條 D型黑色',        price:3,   unit:'尺', sold:'20萬+',badge:'超熱', img:'🔇', desc:'D型黑色，DIY設計可自選長度，隔音防撞多用途' },
+  { id:9,  cat:'seal', name:'塑膠防撞氣密條 10×15mm',   price:7,   unit:'尺', sold:'341',  badge:null,   img:'🔇', desc:'台灣現貨，汽車隔音防水氣密，客製剪裁' },
+  { id:10, cat:'seal', name:'五層氣密窗密封條 卡槽式',  price:98,  unit:'條', sold:'35',   badge:'新品', img:'🔇', desc:'卡槽式設計，塑鋼窗斷橋窗通用，五層防護' },
+  { id:11, cat:'seal', name:'有背膠密封條整卷 P/D/I/E型',price:793, unit:'卷', sold:'180',  badge:null,   img:'🔇', desc:'整卷超值販售，多型號可選，隔音氣密雙條式' },
+  { id:12, cat:'seal', name:'門底毛刷條 110cm 咖啡/銀灰',price:114, unit:'條', sold:'159',  badge:null,   img:'🔇', desc:'DQ110軟毛刷鋁擠型，隔音防蟲防塵，雙色可選' },
+  { id:13, cat:'seal', name:'門底毛刷條 91/110/130cm',   price:104, unit:'條', sold:'62',   badge:null,   img:'🔇', desc:'三種長度可選，銀灰/咖啡色，軟毛氣密條' },
+  { id:14, cat:'seal', name:'鋁擠型門底封條 91-130cm',   price:149, unit:'條', sold:'127',  badge:null,   img:'🔇', desc:'鋁型防塵條，三種長度，門底氣密防撞隔音' },
+  { id:15, cat:'seal', name:'加寬型鋁擠型門底封條',      price:189, unit:'條', sold:'182',  badge:null,   img:'🔇', desc:'加寬設計，91/110/130cm三種，防撞氣密門縫條' },
+  { id:16, cat:'seal', name:'軟毛刷鋁擠型門封條 91-130cm',price:179,unit:'條', sold:'80',   badge:null,   img:'🔇', desc:'軟毛刷+鋁擠型，三種長度，隔音防塵防蟲' },
+  { id:17, cat:'seal', name:'塑膠門封條背膠 91-130cm',   price:39,  unit:'條', sold:'429',  badge:null,   img:'🔇', desc:'背膠設計，防塵隔音，91/110/130cm三種長度' },
+  { id:18, cat:'seal', name:'門縫條防塵條 12款任選',     price:98,  unit:'條', sold:'757',  badge:null,   img:'🔇', desc:'台灣工廠直營，12款任選，加厚硬款密封隔音降噪' },
+
+  /* ── 門檔門止 ── */
+  { id:20, cat:'stop', name:'不鏽鋼磁石門擋 萬向型',    price:64,  unit:'個', sold:'6000+',badge:'熱銷', img:'🚪', desc:'超強磁吸無痕免釘，萬向型設計，不鏽鋼耐用' },
+  { id:21, cat:'stop', name:'門檔 防撞門擋 不鏽鋼',     price:43,  unit:'個', sold:'9000+',badge:'熱銷', img:'🚪', desc:'不鏽鋼材質，免打孔，防撞靜音，三種款式可選' },
+  { id:22, cat:'stop', name:'磁石門吸 塑膠磁石門擋',    price:44,  unit:'個', sold:'1000+',badge:null,   img:'🚪', desc:'HJ002電磁門止，米白/咖啡色，磁石吸附防撞' },
+  { id:23, cat:'stop', name:'半圓門檔 不鏽鋼 低門擋',   price:14,  unit:'個', sold:'3000+',badge:null,   img:'🚪', desc:'台灣公司貨，黑色不鏽鋼，無痕免釘加厚矽膠' },
+  { id:24, cat:'stop', name:'橡膠掛鉤門檔 防撞防夾',    price:4,   unit:'個', sold:'2000+',badge:null,   img:'🚪', desc:'掛鉤式橡膠門檔，防撞防夾安全，止滑門擋' },
+  { id:25, cat:'stop', name:'磁吸門擋黑色 隱形平面',    price:9,   unit:'個', sold:'1萬+', badge:null,   img:'🚪', desc:'隱形平面設計，可掛式移動，強力磁石門阻器' },
+  { id:26, cat:'stop', name:'薄型半圓門檔 帶磁 HJ012',  price:58,  unit:'個', sold:'968',  badge:null,   img:'🚪', desc:'銀色低門檔帶磁吸，固定式橡膠戶擋，耐用款' },
+  { id:27, cat:'stop', name:'靜音門墊 門把防撞墊',      price:8,   unit:'個', sold:'5000+',badge:null,   img:'🚪', desc:'卡通可愛造型，靜音防撞，保護牆面與門鎖' },
+  { id:28, cat:'stop', name:'插入式卡榫門扣 香檳色',    price:28,  unit:'個', sold:'472',  badge:null,   img:'🚪', desc:'HF027紗門防倒檔，鋁門紗門專用，固定止擋' },
+  { id:29, cat:'stop', name:'塑膠卡榫門扣 白色 HF006',  price:29,  unit:'個', sold:'315',  badge:null,   img:'🚪', desc:'插入式門止，附螺絲，鋁門門擋固定檔' },
+  { id:30, cat:'stop', name:'自動關門磁鐵門吸',         price:14,  unit:'個', sold:'6000+',badge:null,   img:'🚪', desc:'隱形磁吸門擋，拉門磁扣閉門器，強力磁鐵' },
+  { id:31, cat:'stop', name:'平移門底輪 防門下垂',      price:109, unit:'組', sold:'41',   badge:'新品', img:'🚪', desc:'最新設計防門下垂，磁吸門檔+平移輪導向輪' },
+  { id:32, cat:'stop', name:'櫥櫃戶檔 四角小型磁石',    price:7,   unit:'個', sold:'2000+',badge:null,   img:'🚪', desc:'GMCJXL不鏽鋼四角小型，磁鐵吸附門擋門檔' },
+  { id:33, cat:'stop', name:'一字型門擋 DS2019 鋅合金',  price:59,  unit:'個', sold:'30',   badge:null,   img:'🚪', desc:'金色/銀色1字型門檔，鋅合金長形戶檔門頂' },
+  { id:34, cat:'stop', name:'薄型半圓門檔 DS2001 金/銀', price:34,  unit:'個', sold:'38',   badge:null,   img:'🚪', desc:'固定式低門檔，橡膠戶擋，金色銀色兩色可選' },
+  { id:35, cat:'stop', name:'造型門擋 小狗小貓小熊',    price:48,  unit:'個', sold:'447',  badge:null,   img:'🚪', desc:'創意生活造型門檔，掛鉤式，防關門安全設計' },
+  { id:36, cat:'stop', name:'加長型磁石門止 不鏽鋼',    price:58,  unit:'個', sold:'186',  badge:null,   img:'🚪', desc:'萬向型不鏽鋼磁石，清倉特價，強力磁性門吸' },
+
+  /* ── 門窗安全鎖 ── */
+  { id:40, cat:'lock', name:'門窗限位鎖 防盜防墜鎖',    price:84,  unit:'個', sold:'2萬+', badge:'熱銷', img:'🔒', desc:'防盜防墜兒童安全鎖，窗戶安全限位定位鎖' },
+  { id:41, cat:'lock', name:'窗戶定位鎖 室外型夾軌式',  price:159, unit:'個', sold:'1000+',badge:null,   img:'🔒', desc:'室外型夾軌式，安全輔助防墜防盜兒童安全鎖' },
+  { id:42, cat:'lock', name:'撐開式窗戶定位鎖 銀/咖啡', price:149, unit:'個', sold:'637',  badge:null,   img:'🔒', desc:'撐開式設計，安全輔助鎖防墜防盜，兒童安全' },
+  { id:43, cat:'lock', name:'防墜鈕 門窗限制器安全鈕',  price:84,  unit:'個', sold:'1000+',badge:'熱銷', img:'🔒', desc:'可調整開窗大小，兒童防墜安全輔助鎖定位鈕' },
+  { id:44, cat:'lock', name:'門窗防開鎖 兒童安全鎖',    price:58,  unit:'個', sold:'6000+',badge:null,   img:'🔒', desc:'禁止開設計，幼兒安全防盜鎖，定位安全鎖' },
+  { id:45, cat:'lock', name:'防盜鎖扣 阻門器安全鎖扣',  price:48,  unit:'個', sold:'253',  badge:null,   img:'🔒', desc:'租屋旅行必備，防盜安全扣，阻門器防開門' },
+  { id:46, cat:'lock', name:'紗窗中檔 防撞中止擋',      price:11,  unit:'個', sold:'425',  badge:null,   img:'🔒', desc:'氣密窗紗窗中檔，防撞擋塊，鋁門窗紗門通用' },
+
+  /* ── 信箱 ── */
+  { id:50, cat:'box',  name:'鐵製信箱 掀蓋式 田園風',   price:198, unit:'個', sold:'846',  badge:'熱銷', img:'📬', desc:'黃色鐵製掀蓋式，田園風意見箱附2支鑰匙螺絲' },
+  { id:51, cat:'box',  name:'不鏽鋼信箱 304 外投外取',  price:743, unit:'個', sold:'137',  badge:null,   img:'📬', desc:'304白鐵鍛造，附二支鑰匙，26×12×35cm' },
+  { id:52, cat:'box',  name:'密碼鎖信箱 室外防水大號',  price:387, unit:'個', sold:'35',   badge:null,   img:'📬', desc:'鐵質室外防水，自訂密碼，簡約現代意見箱' },
+  { id:53, cat:'box',  name:'印花烤漆信箱 綠花款',      price:1004,unit:'個', sold:'1',    badge:null,   img:'📬', desc:'40×25×10cm，附鑰匙螺絲，外投外取上掀式' },
+  { id:54, cat:'box',  name:'烤漆信箱 銀花款 上掀式',   price:1132,unit:'個', sold:'1',    badge:null,   img:'📬', desc:'37×36×10cm，附鑰匙螺絲，上掀式精緻信箱' },
+  { id:55, cat:'box',  name:'鐵灰砂烤漆信箱 304不鏽鋼', price:1240,unit:'個', sold:'59',   badge:null,   img:'📬', desc:'粉體塗裝白鐵304，附二支鑰匙，26×35×12cm' },
+  { id:56, cat:'box',  name:'咖啡砂烤漆信箱 304不鏽鋼', price:1240,unit:'個', sold:'46',   badge:null,   img:'📬', desc:'粉體塗裝咖啡砂，附鑰匙，外投外取優雅款' },
+  { id:57, cat:'box',  name:'烤漆信箱 綠色上掀式',      price:743, unit:'個', sold:'清倉', badge:'特價', img:'📬', desc:'40×25×10cm，清倉特價，附鑰匙螺絲' },
+  { id:58, cat:'box',  name:'印花烤漆信箱 白灰圈 E5608',price:1475,unit:'個', sold:'1',    badge:null,   img:'📬', desc:'上掀式信箱，附鑰匙螺絲，精緻印花設計' },
+  { id:59, cat:'box',  name:'信箱數字貼 立體帶背膠',    price:19,  unit:'個', sold:'127',  badge:null,   img:'📬', desc:'古銅色立體數字貼，客製化信箱號碼門牌貼' },
+
+  /* ── 鎖具鑰匙 ── */
+  { id:60, cat:'key',  name:'密碼鑰匙盒 密碼鎖盒',      price:59,  unit:'個', sold:'366',  badge:null,   img:'🗝️', desc:'密碼保護鑰匙收納，防盜鎖盒，安全便利' },
+  { id:61, cat:'key',  name:'鎖頭 鑰匙掛鎖 附鑰匙',     price:14,  unit:'個', sold:'2000+',badge:'熱銷', img:'🗝️', desc:'台灣現貨，附鑰匙，銅鎖/鋼鎖多種選擇' },
+  { id:62, cat:'key',  name:'信箱鎖 LO012 抽屜鎖',      price:59,  unit:'個', sold:'784',  badge:null,   img:'🗝️', desc:'吊卡盒裝，辦公桌抽屜DIY維修改裝用信箱鎖頭' },
+  { id:63, cat:'key',  name:'指紋鎖 智能掛鎖 置物櫃鎖', price:229, unit:'個', sold:'499',  badge:null,   img:'🗝️', desc:'智慧指紋鎖，保險箱置物櫃小掛鎖，方便安全' },
+  { id:64, cat:'key',  name:'壁掛鑰匙箱 鋁合金 管理箱', price:487, unit:'個', sold:'591',  badge:null,   img:'🗝️', desc:'可開發票統編，玄關鑰匙管理，旅宿飯店適用' },
+  { id:65, cat:'key',  name:'保險箱 密碼鑰匙兩用 小型', price:198, unit:'個', sold:'4',    badge:null,   img:'🗝️', desc:'密碼+鑰匙兩用，家用小型保險箱，安全存放' },
+
+  /* ── 包材用品 ── */
+  { id:70, cat:'pkg',  name:'破壞袋 物流袋 100入/捲',    price:42,  unit:'捲', sold:'3萬+', badge:'超低', img:'📦', desc:'全台最低價，白色包裝袋，網拍快遞超商寄貨' },
+  { id:71, cat:'pkg',  name:'加厚破壞袋 100入/捲',       price:89,  unit:'捲', sold:'1000+',badge:null,   img:'📦', desc:'加厚款包裝袋，100入，耐用不易破損' },
+  { id:72, cat:'pkg',  name:'封箱膠帶 OPP透明 超黏',    price:24,  unit:'捲', sold:'7000+',badge:null,   img:'📦', desc:'台灣現貨，超黏韌易拉，封箱文具包材必備' },
+  { id:73, cat:'pkg',  name:'封箱膠台 切割器',           price:17,  unit:'個', sold:'3000+',badge:null,   img:'📦', desc:'電商首選封箱神器，省力好用膠帶切台' },
+  { id:74, cat:'pkg',  name:'氣泡布 30×3500cm 防撞捲',  price:88,  unit:'捲', sold:'3000+',badge:null,   img:'📦', desc:'超商限一捲，氣泡紙緩衝材料，CP值高' },
+  { id:75, cat:'pkg',  name:'氣泡紙氣泡捲 批發價',       price:594, unit:'捲', sold:'13',   badge:null,   img:'📦', desc:'大批量氣泡布，保護防撞緩衝包裝材料' },
+  { id:76, cat:'pkg',  name:'個資保護液 熱敏紙塗改',     price:23,  unit:'瓶', sold:'1000+',badge:null,   img:'📦', desc:'速乾快遞塗抹神器，保密印章消除液個資保護' },
+
+  /* ── 工具文具 ── */
+  { id:80, cat:'tool', name:'不鏽鋼剪刀 鋒利多用途',     price:28,  unit:'支', sold:'775',  badge:null,   img:'✂️', desc:'台灣現貨，辦公家用勞作裁剪，鋒利耐用' },
+  { id:81, cat:'tool', name:'美工刀 小號不鏽鋼',         price:7,   unit:'支', sold:'4000+',badge:'超值', img:'✂️', desc:'拆信刀裁紙刀，便攜平角合金美工刀' },
+  { id:82, cat:'tool', name:'大美工刀 工業用 開箱刀',    price:57,  unit:'支', sold:'1000+',badge:null,   img:'✂️', desc:'工業美工刀，裁紙壁紙切割多功能開箱刀' },
+  { id:83, cat:'tool', name:'二合一美工剪刀',            price:38,  unit:'支', sold:'69',   badge:'新品', img:'✂️', desc:'免運，特氟龍+不鏽鋼二合一，辦公文具必備' },
+];
+
+/* ───── UTILS ───── */
+const fmt = n => new Intl.NumberFormat('zh-TW').format(n);
+
+/* ───── COMPONENTS ───── */
+
+function Badge({ text }) {
+  if (!text) return null;
+  const cls = { '熱銷':'bg-red-500','超熱':'bg-red-600','升級':'bg-blue-500','新品':'bg-emerald-500','超低':'bg-orange-500','超值':'bg-orange-500','特價':'bg-purple-500' };
+  return <span className={`absolute top-2 left-2 text-white text-xs font-bold px-2 py-0.5 rounded-full z-10 ${cls[text]||'bg-gray-500'}`}>{text}</span>;
+}
+
+function ProductCard({ product, onAdd }) {
+  const [added, setAdded] = useState(false);
+  const handleAdd = () => {
+    onAdd(product);
+    setAdded(true);
+    setTimeout(() => setAdded(false), 1200);
+  };
+  return (
+    <div className="product-card bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden flex flex-col border border-gray-100">
+      <div className="relative overflow-hidden bg-gradient-to-br from-brand-50 to-green-50 h-36 flex items-center justify-center">
+        <Badge text={product.badge} />
+        <span className="product-img text-6xl transition-transform duration-500">{product.img}</span>
+        {product.sold && (
+          <span className="absolute bottom-2 right-2 text-xs text-gray-400 bg-white/80 px-1.5 py-0.5 rounded-full">售出 {product.sold}</span>
+        )}
+      </div>
+      <div className="p-3 flex flex-col flex-1">
+        <h3 className="font-semibold text-gray-800 text-xs leading-snug mb-1 line-clamp-2">{product.name}</h3>
+        <p className="text-xs text-gray-400 mb-2 flex-1 line-clamp-2">{product.desc}</p>
+        <div className="flex items-end justify-between gap-1">
+          <div>
+            <span className="text-brand-600 font-bold text-base">NT$ {fmt(product.price)}</span>
+            <span className="text-gray-400 text-xs ml-0.5">/{product.unit}</span>
+          </div>
+          <button
+            onClick={handleAdd}
+            className={`flex-shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 ${
+              added ? 'bg-green-400 text-white scale-95' : 'bg-brand-500 hover:bg-brand-600 text-white'
+            }`}
+          >
+            {added ? '✓ 已加入' : '+ 加入'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CartPanel({ cart, onClose, onIncrease, onDecrease, onRemove, onInquire }) {
+  const total = cart.reduce((s,i) => s + i.price * i.qty, 0);
+  return (
+    <div className="fixed inset-0 z-50 flex justify-end">
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative w-full max-w-md bg-white h-full flex flex-col shadow-2xl">
+        <div className="flex items-center justify-between px-5 py-4 border-b sticky top-0 bg-white z-10">
+          <h2 className="font-bold text-lg text-gray-800">🛒 購物車</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-2xl leading-none">×</button>
+        </div>
+        {cart.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-gray-400 gap-3">
+            <span className="text-6xl">🛒</span><p>購物車是空的</p>
+          </div>
+        ) : (
+          <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3 scrollbar-hide">
+            {cart.map(item => (
+              <div key={item.id} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                <span className="text-3xl flex-shrink-0">{item.img}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-gray-800 line-clamp-2">{item.name}</p>
+                  <p className="text-brand-600 text-sm font-semibold mt-0.5">NT$ {fmt(item.price)}/{item.unit}</p>
+                </div>
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <button onClick={() => onDecrease(item.id)} className="w-7 h-7 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 text-sm font-bold flex items-center justify-center">−</button>
+                  <span className="w-7 text-center text-sm font-semibold">{item.qty}</span>
+                  <button onClick={() => onIncrease(item.id)} className="w-7 h-7 rounded-full bg-white border border-gray-200 text-gray-600 hover:bg-gray-100 text-sm font-bold flex items-center justify-center">+</button>
+                  <button onClick={() => onRemove(item.id)} className="w-7 h-7 rounded-full bg-red-50 text-red-400 hover:bg-red-100 flex items-center justify-center ml-1 text-sm">🗑</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {cart.length > 0 && (
+          <div className="px-5 py-4 border-t bg-white space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">詢價小計</span>
+              <span className="font-bold text-xl text-gray-800">NT$ {fmt(total)}</span>
+            </div>
+            <button
+              onClick={onInquire}
+              className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors text-base"
+            >
+              <LineIcon className="w-5 h-5" /> 透過 LINE 詢價
+            </button>
+            <p className="text-xs text-center text-gray-400">我們將在 LINE 中提供正確報價及出貨資訊</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function LineIcon({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.97.55 3.81 1.49 5.38L2 22l4.86-1.55A9.89 9.89 0 0012.04 21.82c5.46 0 9.91-4.45 9.91-9.91S17.5 2 12.04 2zm4.92 13.13c-.21.59-1.22 1.15-1.67 1.22-.45.07-.97.1-1.56-.1-.36-.12-.82-.28-1.41-.55-2.47-1.07-4.08-3.57-4.21-3.74-.12-.17-1.02-1.36-1.02-2.59 0-1.23.64-1.84.87-2.09.23-.25.5-.31.67-.31.17 0 .34.002.49.009.16.008.37-.06.58.44.22.52.74 1.78.81 1.91.07.13.11.29.02.46-.09.17-.13.28-.25.43-.12.15-.26.33-.37.44-.12.12-.25.25-.11.5.14.25.63 1.04 1.35 1.68.93.83 1.71 1.09 1.96 1.21.25.12.4.1.54-.06.15-.16.62-.73.79-.98.17-.25.33-.21.56-.13.23.08 1.47.69 1.72.82.25.13.42.19.48.3.06.11.06.63-.15 1.24z"/>
+    </svg>
+  );
+}
+
+function LineModal({ cart, onClose }) {
+  const total = cart.reduce((s,i) => s+i.price*i.qty, 0);
+  const itemLines = cart.map(i=>`• ${i.name} × ${i.qty}（NT$ ${fmt(i.price*i.qty)}）`).join('\n');
+  const msg = encodeURIComponent(`您好，我想詢問以下商品的報價：\n\n${itemLines}\n\n參考小計：NT$ ${fmt(total)}\n\n請問庫存狀況及出貨時間，謝謝！`);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div className="bg-green-500 px-6 py-5 text-white text-center">
+          <LineIcon className="w-12 h-12 mx-auto mb-2" />
+          <h2 className="text-xl font-bold">LINE 詢價</h2>
+          <p className="text-green-100 text-sm mt-1">昇瑋鋁窗五金</p>
+        </div>
+        <div className="px-6 py-5">
+          <div className="bg-gray-50 rounded-xl p-3 mb-4 max-h-40 overflow-y-auto scrollbar-hide">
+            {cart.map(i => (
+              <div key={i.id} className="flex justify-between text-xs py-1 border-b border-gray-100 last:border-0">
+                <span className="text-gray-600 truncate pr-2">{i.img} {i.name} ×{i.qty}</span>
+                <span className="font-semibold text-gray-800 flex-shrink-0">NT$ {fmt(i.price*i.qty)}</span>
+              </div>
+            ))}
+            <div className="flex justify-between text-sm font-bold pt-2">
+              <span>參考小計</span>
+              <span className="text-brand-600">NT$ {fmt(total)}</span>
+            </div>
+          </div>
+          <p className="text-xs text-gray-500 mb-4 text-center">點擊下方按鈕，自動帶入商品清單至 LINE 詢價</p>
+          <div className="space-y-2">
+            <a href={`https://line.me/R/msg/text/?${msg}`} target="_blank" rel="noopener noreferrer"
+               className="block w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 rounded-xl text-center transition-colors">
+              開啟 LINE 傳送詢價訊息
+            </a>
+            <a href="https://shopee.tw/shengwei0518" target="_blank" rel="noopener noreferrer"
+               className="block w-full bg-orange-50 border-2 border-orange-300 text-orange-600 font-bold py-2.5 rounded-xl text-center hover:bg-orange-100 transition-colors text-sm">
+              🛍 前往蝦皮商店下單
+            </a>
+          </div>
+          <button onClick={onClose} className="w-full text-gray-400 hover:text-gray-600 text-sm mt-3 py-1">取消</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Header({ cartCount, onCartOpen }) {
+  return (
+    <header className="bg-white shadow-sm sticky top-0 z-40 border-b border-gray-100">
+      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <img src="logo.png" alt="昇瑋Logo" className="h-10 w-10 object-contain rounded-lg"
+               onError={e => { e.target.style.display='none'; e.target.nextElementSibling.style.display='flex'; }} />
+          <div className="w-10 h-10 bg-brand-600 rounded-xl items-center justify-center text-white font-black text-lg shadow hidden">昇</div>
+          <div>
+            <h1 className="font-black text-gray-800 text-base leading-none">昇瑋鋁窗五金行</h1>
+            <p className="text-xs text-gray-400">竹山鎮・049-264-4518</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <a href="https://shopee.tw/shengwei0518" target="_blank" rel="noopener noreferrer"
+             className="hidden sm:flex items-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors">
+            🛍 蝦皮商店
+          </a>
+          <a href="https://line.me/ti/p/@shengwei_hardware" target="_blank" rel="noopener noreferrer"
+             className="hidden sm:flex items-center gap-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors">
+            <LineIcon className="w-4 h-4" /> LINE 詢價
+          </a>
+          <button onClick={onCartOpen}
+            className="relative flex items-center gap-1.5 bg-brand-500 hover:bg-brand-600 text-white px-3 py-2 rounded-lg transition-colors font-semibold text-sm">
+            <span>🛒</span>
+            <span className="hidden sm:inline">詢價清單</span>
+            {cartCount > 0 && (
+              <span key={cartCount} className="cart-badge absolute -top-2 -right-2 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-bold">
+                {cartCount > 9 ? '9+' : cartCount}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
+function Hero() {
+  return (
+    <div className="bg-gradient-to-br from-brand-800 via-brand-600 to-green-500 text-white">
+      <div className="max-w-6xl mx-auto px-4 py-10 flex flex-col md:flex-row items-center gap-8">
+        <div className="flex-1">
+          <p className="text-green-200 text-xs font-semibold mb-2 tracking-widest uppercase">南投竹山・專業五金批發零售</p>
+          <h2 className="text-3xl md:text-4xl font-black mb-3 leading-tight">
+            鋁窗五金專家<br/>
+            <span className="text-green-200">品質保證・快速出貨</span>
+          </h2>
+          <p className="text-green-100 text-sm mb-5 max-w-md">專營門窗配件、密封條、門檔、信箱、鎖具等各式五金材料，蝦皮 15 萬粉絲信賴，批發零售皆宜。</p>
+          <div className="flex gap-2 flex-wrap">
+            {['📦 現貨供應','🚚 隔日到貨','⭐ 評價 4.9','💬 LINE 詢價'].map(t=>(
+              <div key={t} className="bg-white/20 backdrop-blur rounded-lg px-3 py-1.5 text-xs font-semibold">{t}</div>
+            ))}
+          </div>
+        </div>
+        <div className="flex-shrink-0 flex gap-4 text-6xl">
+          <span>🚪</span><span>🔒</span><span>📬</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ───── MAIN APP ───── */
+function App() {
+  const [activeCategory, setActiveCategory] = useState('all');
+  const [search, setSearch] = useState('');
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [lineOpen, setLineOpen] = useState(false);
+
+  const addToCart = useCallback((product) => {
+    setCart(prev => {
+      const ex = prev.find(i => i.id === product.id);
+      if (ex) return prev.map(i => i.id === product.id ? { ...i, qty: i.qty+1 } : i);
+      return [...prev, { ...product, qty: 1 }];
+    });
+  }, []);
+
+  const increase = useCallback((id) => setCart(prev => prev.map(i => i.id===id ? {...i,qty:i.qty+1} : i)), []);
+  const decrease = useCallback((id) => setCart(prev => {
+    const item = prev.find(i=>i.id===id);
+    if (item.qty<=1) return prev.filter(i=>i.id!==id);
+    return prev.map(i=>i.id===id?{...i,qty:i.qty-1}:i);
+  }), []);
+  const remove = useCallback((id) => setCart(prev => prev.filter(i=>i.id!==id)), []);
+
+  const cartCount = cart.reduce((s,i)=>s+i.qty,0);
+
+  const filtered = PRODUCTS.filter(p => {
+    const matchCat = activeCategory==='all' || p.cat===activeCategory;
+    const q = search.toLowerCase();
+    const matchSearch = !search || p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q);
+    return matchCat && matchSearch;
+  });
+
+  const catRef = useRef(null);
+  const scrollCat = dir => { if(catRef.current) catRef.current.scrollLeft += dir*120; };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Header cartCount={cartCount} onCartOpen={() => setCartOpen(true)} />
+      <Hero />
+
+      {/* Category + Search */}
+      <div className="bg-white border-b border-gray-100 sticky top-16 z-30">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="pt-3 pb-2">
+            <div className="relative max-w-lg">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">🔍</span>
+              <input type="text" placeholder="搜尋商品…" value={search} onChange={e=>setSearch(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 text-sm bg-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-brand-400 transition" />
+              {search && <button onClick={()=>setSearch('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">×</button>}
+            </div>
+          </div>
+          <div className="relative flex items-center">
+            <button onClick={()=>scrollCat(-1)} className="absolute left-0 z-10 bg-white shadow-md rounded-full w-7 h-7 items-center justify-center text-gray-500 text-xs flex-shrink-0 md:hidden flex">‹</button>
+            <div ref={catRef} className="flex gap-2 overflow-x-auto scrollbar-hide py-3 px-1 scroll-smooth">
+              {CATEGORIES.map(c => (
+                <button key={c.id} onClick={()=>setActiveCategory(c.id)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold flex-shrink-0 transition-all duration-200 ${
+                    activeCategory===c.id ? 'bg-brand-500 text-white shadow-md scale-105' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}>
+                  <span>{c.icon}</span><span>{c.label}</span>
+                </button>
+              ))}
+            </div>
+            <button onClick={()=>scrollCat(1)} className="absolute right-0 z-10 bg-white shadow-md rounded-full w-7 h-7 items-center justify-center text-gray-500 text-xs flex-shrink-0 md:hidden flex">›</button>
+          </div>
+        </div>
+      </div>
+
+      {/* Products */}
+      <main className="max-w-6xl mx-auto px-4 py-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-bold text-gray-700 text-sm">
+            {CATEGORIES.find(c=>c.id===activeCategory)?.label || '全部商品'}
+            <span className="text-gray-400 font-normal ml-2">({filtered.length} 件)</span>
+          </h2>
+          {search && <p className="text-sm text-brand-600">搜尋：「{search}」</p>}
+        </div>
+
+        {filtered.length === 0 ? (
+          <div className="text-center py-20 text-gray-400">
+            <p className="text-5xl mb-4">😔</p>
+            <p>找不到符合的商品</p>
+            <button onClick={()=>{setSearch('');setActiveCategory('all');}} className="mt-3 text-brand-500 text-sm hover:underline">清除篩選</button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {filtered.map(p => <ProductCard key={p.id} product={p} onAdd={addToCart} />)}
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-800 text-gray-300 mt-16">
+        <div className="max-w-6xl mx-auto px-4 py-10 grid sm:grid-cols-3 gap-8">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center text-white font-black">昇</div>
+              <span className="font-bold text-white">昇瑋鋁窗五金行</span>
+            </div>
+            <p className="text-sm text-gray-400 leading-relaxed">專業鋁窗五金材料供應，門窗密封條、門檔、信箱、鎖具批發零售，蝦皮 15 萬粉絲信賴品牌。</p>
+          </div>
+          <div>
+            <h4 className="font-semibold text-white mb-3">聯絡資訊</h4>
+            <ul className="space-y-2 text-sm text-gray-400">
+              <li className="flex items-center gap-2">📍 南投縣竹山鎮埔頭街一巷15號</li>
+              <li className="flex items-center gap-2">📞 049-264-4518</li>
+              <li className="flex items-center gap-2">🏢 美升鋁門窗・統編 06144594</li>
+              <li className="flex items-center gap-2">⏰ 週一至週六 08:00 – 18:00</li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold text-white mb-3">線上商店</h4>
+            <ul className="space-y-2 text-sm text-gray-400">
+              <li><a href="https://shopee.tw/shengwei0518" target="_blank" rel="noopener noreferrer" className="hover:text-orange-400 flex items-center gap-2 transition-colors">🛍 蝦皮商店 shengwei0518</a></li>
+              <li><a href="https://line.me/ti/p/@shengwei_hardware" target="_blank" rel="noopener noreferrer" className="hover:text-green-400 flex items-center gap-2 transition-colors"><span className="text-green-500">●</span> LINE 官方帳號</a></li>
+              {CATEGORIES.slice(1).map(c=>(
+                <li key={c.id}><button onClick={()=>{setActiveCategory(c.id);window.scrollTo({top:0,behavior:'smooth'});}} className="hover:text-white transition-colors">{c.icon} {c.label}</button></li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <div className="border-t border-gray-700 py-4 text-center text-xs text-gray-500">
+          © 2025 昇瑋鋁窗五金行 All Rights Reserved ・ 美升鋁門窗 統編 06144594
+        </div>
+      </footer>
+
+      {/* Floating LINE */}
+      <a href="https://line.me/ti/p/@shengwei_hardware" target="_blank" rel="noopener noreferrer"
+         className="fixed bottom-6 right-6 z-40 bg-green-500 hover:bg-green-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all hover:scale-110" title="LINE 詢價">
+        <LineIcon className="w-8 h-8" />
+      </a>
+
+      {cartOpen && <CartPanel cart={cart} onClose={()=>setCartOpen(false)} onIncrease={increase} onDecrease={decrease} onRemove={remove} onInquire={()=>{setCartOpen(false);setLineOpen(true);}} />}
+      {lineOpen && <LineModal cart={cart} onClose={()=>setLineOpen(false)} />}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
